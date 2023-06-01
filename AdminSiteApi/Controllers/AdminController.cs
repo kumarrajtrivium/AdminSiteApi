@@ -5,7 +5,7 @@ using System.Data.SqlClient;
 namespace AdminSiteApi.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class AdminController : Controller
     {
         public readonly IConfiguration _configuration;
@@ -35,17 +35,47 @@ namespace AdminSiteApi.Controllers
             {
                 users.Add(new User()
                 {
-                    Id = Convert.ToInt16(dr["id"]),
+                    Id = Convert.ToInt32(dr["id"]),
                     UserName = dr["username"].ToString(),
                     CompanyID = dr["CompanyID"].ToString(),
                     CompanyName = dr["CompanyName"].ToString(),
                     UserType = dr["usertype"].ToString(),
                 });
             }
-            
+
             con.Close();
 
             return users;
+        }
+
+        [HttpGet]
+        [Route("GetUserByID/{id}")]
+        public IActionResult GetUserByID(int id)
+        {
+            try
+            {
+                User users = new User();
+                connection();
+                con.Open();
+                SqlCommand cmd = new SqlCommand("select * from Users where id=@id", con);
+                cmd.Parameters.AddWithValue("@id", id);
+                SqlDataReader dr = cmd.ExecuteReader();
+                if (dr.Read())
+                {
+                    users.Id = Convert.ToInt32(dr["id"]);
+                    users.UserName = dr["username"].ToString();
+                    users.CompanyID = dr["CompanyID"].ToString();
+                    users.CompanyName = dr["CompanyName"].ToString();
+                    users.UserType = dr["usertype"].ToString();
+                    return Ok(users);
+                }
+                return BadRequest("id : " + id + " Not Found");
+            }
+
+            finally
+            {
+                con.Close();
+            }
         }
 
         [HttpPost]
@@ -60,11 +90,11 @@ namespace AdminSiteApi.Controllers
                 // Assign the SQL Insert statement we want to execute to the command text
                 cmd.CommandText = "INSERT INTO Users " +
                 "(id, username, CompanyID, CompanyName, usertype)" +
-                "VALUES('" +user.Id + "', '" +user.UserName+ "', '" +user.CompanyID + "','" + user.CompanyName+ "', '" +user.UserType+ "')";
+                "VALUES('" + user.Id + "', '" + user.UserName + "', '" + user.CompanyID + "','" + user.CompanyName + "', '" + user.UserType + "')";
 
-                int i = cmd.ExecuteNonQuery();
+                int result = cmd.ExecuteNonQuery();
                 con.Close();
-                if (i >= 1)
+                if (result >= 1)
                 {
                     return Ok("Data Inserted Successfully");
                 }
@@ -83,11 +113,11 @@ namespace AdminSiteApi.Controllers
             cmd.CommandText = "Delete from Users where id = " + Id;
 
             con.Open();
-            int i = cmd.ExecuteNonQuery();
+            int result = cmd.ExecuteNonQuery();
             con.Close();
-            if (i >= 1)
+            if (result >= 1)
             {
-                return Ok("id : "+ Id + " Deleted Successfully");
+                return Ok("id : " + Id + " Deleted Successfully");
             }
             return BadRequest("id : " + Id + " Not Found");
         }
