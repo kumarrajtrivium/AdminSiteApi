@@ -6,10 +6,10 @@ namespace AdminSiteApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AdminController : Controller
+    public class ClientController : Controller
     {
         public readonly IConfiguration _configuration;
-        public AdminController(IConfiguration configuration)
+        public ClientController(IConfiguration configuration)
         {
             _configuration = configuration;
         }
@@ -24,50 +24,48 @@ namespace AdminSiteApi.Controllers
         }
 
         [HttpGet]
-        public List<User> GetAllUser()
+        [Route("GetAllClient")]
+        public List<Client> GetAllClient()
         {
-            List<User> users = new List<User>();
+            List<Client> clients = new List<Client>();
             connection();
             con.Open();
-            SqlCommand cmd = new SqlCommand("select * from Users", con);
+            SqlCommand cmd = new SqlCommand("select * from Client", con);
             SqlDataReader dr = cmd.ExecuteReader();
             while (dr.Read())
             {
-                users.Add(new User()
+                clients.Add(new Client()
                 {
                     Id = Convert.ToInt32(dr["id"]),
-                    UserName = dr["username"].ToString(),
-                    CompanyID = dr["CompanyID"].ToString(),
-                    CompanyName = dr["CompanyName"].ToString(),
-                    UserType = dr["usertype"].ToString(),
+                    ClientName = dr["clientname"].ToString(),
+                    PhoneNumber = Convert.ToInt32(dr["phoneNumber"]),
+                    Address = dr["address"].ToString()
                 });
             }
-
             con.Close();
 
-            return users;
+            return clients;
         }
 
         [HttpGet]
-        [Route("GetUserByID/{id}")]
-        public IActionResult GetUserByID(int id)
+        [Route("GetClientByID/{id}")]
+        public IActionResult GetClientByID(int id)
         {
             try
             {
-                User users = new User();
+                Client clients = new Client();
                 connection();
                 con.Open();
-                SqlCommand cmd = new SqlCommand("select * from Users where id=@id", con);
+                SqlCommand cmd = new SqlCommand("select * from Client where id=@id", con);
                 cmd.Parameters.AddWithValue("@id", id);
                 SqlDataReader dr = cmd.ExecuteReader();
                 if (dr.Read())
                 {
-                    users.Id = Convert.ToInt32(dr["id"]);
-                    users.UserName = dr["username"].ToString();
-                    users.CompanyID = dr["CompanyID"].ToString();
-                    users.CompanyName = dr["CompanyName"].ToString();
-                    users.UserType = dr["usertype"].ToString();
-                    return Ok(users);
+                    clients.Id = Convert.ToInt32(dr["id"]);
+                    clients.ClientName = dr["clientname"].ToString();
+                    clients.PhoneNumber = Convert.ToInt32(dr["phoneNumber"]);
+                    clients.Address = dr["address"].ToString();
+                    return Ok(clients);
                 }
                 return BadRequest("id : " + id + " Not Found");
             }
@@ -79,19 +77,22 @@ namespace AdminSiteApi.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreateUser(User user)
+        [Route("AddClient")]
+        public IActionResult CreateClient(Client clients)
         {
             if (ModelState.IsValid)
             {
                 connection();
                 con.Open();
 
-                SqlCommand cmd = new SqlCommand("Users", con);
                 // Assign the SQL Insert statement we want to execute to the command text
-                cmd.CommandText = "INSERT INTO Users " +
-                "(id, username, CompanyID, CompanyName, usertype)" +
-                "VALUES('" + user.Id + "', '" + user.UserName + "', '" + user.CompanyID + "','" + user.CompanyName + "', '" + user.UserType + "')";
+                string sqlStr = "insert into client values(@id,@clientname,@phoneNumber,@address)";
+                SqlCommand cmd = new SqlCommand(sqlStr, con);
 
+                cmd.Parameters.AddWithValue("@id", clients.Id);
+                cmd.Parameters.AddWithValue("@clientname", clients.ClientName);
+                cmd.Parameters.AddWithValue("@phoneNumber", clients.PhoneNumber);
+                cmd.Parameters.AddWithValue("@address", clients.Address);
                 int result = cmd.ExecuteNonQuery();
                 con.Close();
                 if (result >= 1)
@@ -103,14 +104,15 @@ namespace AdminSiteApi.Controllers
         }
 
         [HttpDelete]
-        public IActionResult DeleteUser(int Id)
+        [Route("DeleteClient")]
+        public IActionResult DeleteClient(int Id)
         {
 
             connection();
-            SqlCommand cmd = new SqlCommand("Users", con);
+            SqlCommand cmd = new SqlCommand("client", con);
 
             // Assign the SQL Delete statement we want to execute to the command text
-            cmd.CommandText = "Delete from Users where id = " + Id;
+            cmd.CommandText = "Delete from client where id = " + Id;
 
             con.Open();
             int result = cmd.ExecuteNonQuery();
@@ -121,6 +123,5 @@ namespace AdminSiteApi.Controllers
             }
             return BadRequest("id : " + Id + " Not Found");
         }
-
     }
 }
